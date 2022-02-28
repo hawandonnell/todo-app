@@ -18,6 +18,7 @@ App: https://watery-comparison.surge.sh
   <li>Modern HTML5 and CSS3 included</li>
   <li>CSS Grid and CSS Flexbox</li>
   <li>Vue 3 + Vite</li>
+  <li>Formatted and corrected with ESLint and Prettier</li>
 </ul>
 
 
