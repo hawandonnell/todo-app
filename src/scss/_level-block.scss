@@ -1,0 +1,25 @@
+.level-block__inner {
+    padding: 65px 0;
+}
+
+.level-block__bar {
+    width: 100%;
+    height: 30px;
+    background-color: #e3e3e3;
+    border-radius: 15px;
+    position: relative;
+}
+
+.level-block__bar_in {
+    transition: max-width 0.5s;
+    width: 100%;
+    border-radius: 15px;
+    max-width: 0%;
+    height: 30px;
+    background: linear-gradient(270deg, #ff7a7a 0%, #ff9d9d 100%);
+}
+
+.level-block__counter {
+    font-size: 36px;
+    color: rgba(128, 128, 128, 1);
+}

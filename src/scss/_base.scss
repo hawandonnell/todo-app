@@ -1,0 +1,32 @@
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+@font-face {
+    font-family: 'Poppins';
+    src: url('./assets/Poppins-ExtraBold.ttf') format('truetype');
+    font-display: swap;
+}
+
+body {
+    background-color: #fafafa;
+    font-family: 'Poppins', sans-serif;
+    color: rgba(128, 128, 128, 1);
+    padding-bottom: 50px;
+}
+
+a {
+    text-decoration: none;
+    color: rgba(128, 128, 128, 1);
+}
+
+.container {
+    width: 100%;
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
