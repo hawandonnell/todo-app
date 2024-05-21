@@ -1,13 +1,11 @@
 import { createApp } from 'vue'
+import { createPinia } from 'pinia'
 import { dragscrollNext } from 'vue-dragscroll'
 import App from './App.vue'
-// import TestApp from './TestApp.vue'
-
 
 const app = createApp(App)
+const pinia = createPinia()
 
 app.directive('dragscroll', dragscrollNext)
-
+app.use(pinia)
 app.mount('#app')
-
-// createApp(TestApp).mount('#app')

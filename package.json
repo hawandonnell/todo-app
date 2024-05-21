@@ -7,15 +7,18 @@
     "preview": "vite preview --host"
   },
   "dependencies": {
+    "firebase": "^10.11.1",
+    "pinia": "^2.1.7",
     "vue": "^3.2.25",
     "vue-dragscroll": "^3.0.1"
   },
   "devDependencies": {
+    "@eslint/js": "^9.2.0",
     "@iconify/vue": "^3.1.3",
     "@vitejs/plugin-vue": "^2.0.0",
-    "eslint": "^8.10.0",
-    "eslint-config-prettier": "^8.4.0",
-    "eslint-plugin-vue": "^8.5.0",
+    "eslint": "^9.2.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-vue": "^9.25.0",
     "prettier": "2.5.1",
     "sass": "^1.49.9",
     "vite": "^2.7.2"

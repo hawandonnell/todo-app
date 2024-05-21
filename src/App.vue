@@ -1,510 +1,81 @@
-<script>
-import { Icon } from '@iconify/vue'
+<script setup>
+// import { onBeforeMount } from 'vue'
+import { useTodosStore } from '../stores/todos'
+import ProgressBar from './components/ProgressBar.vue'
+import ViewModes from './components/ViewModes.vue'
+import TodosList from './components/Todos/TodosList.vue'
+import Input from './components/Groups/Input.vue'
+import TaskInput from './components/Todos/Input.vue'
+import GroupsList from './components/Groups/GroupsList.vue'
+import DeleteGroup from './components/Groups/Actions/Delete.vue'
+import EditGroup from './components/Groups/Actions/Edit.vue'
+import AuthForm from './components/Auth/index.vue'
+import { firebaseConfig } from '../firebase_config'
+import { initializeApp } from 'firebase/app'
+import { browserLocalPersistence, indexedDBLocalPersistence, initializeAuth, onAuthStateChanged } from 'firebase/auth'
 
-export default {
-    components: {
-        Icon,
-    },
-    data() {
-        return {
-            groups: JSON.parse(localStorage.getItem('groups')) || [],
-            tasks: JSON.parse(localStorage.getItem('tasks')) || [],
-            activeGroupIndex: 0,
-            groupLastId: JSON.parse(localStorage.getItem('groupLastId')) || 0,
-            taskLastId: JSON.parse(localStorage.getItem('taskLastId')) || 0,
-            isActiveItemsViewing: true,
-            addGroupInputValue: '',
-            addTaskInputValue: '',
-            addTaskInputPlaceholder: 'Add task...',
-            changingTaskId: null,
-            isTaskChanging: false,
-            isGroupInputActive: false,
-            addGroupInputPlaceholder: 'Add group...',
-            isChangeGroupState: false,
-        }
-    },
-    computed: {
-        fillLevel() {
-            var completedCount = 0
-            this.getTasks.forEach((elem) => {
-                if (elem.completed == true) {
-                    completedCount++
-                }
-            })
-            var res = 100 / (this.getTasks.length / completedCount)
-            if (res) {
-                return res.toString() + '%'
-            } else {
-                return '0'
-            }
-        },
-        getTasks() {
-            var resTasks = []
-            this.tasks.forEach((el) => {
-                if (el.userId == this.activeGroupIndex) {
-                    resTasks.push(el)
-                }
-            })
-            return resTasks
-        },
-        getViewTasks() {
-            var resTasks = []
-            this.tasks.forEach((el) => {
-                if (
-                    el.userId == this.activeGroupIndex &&
-                    el.completed != this.isActiveItemsViewing
-                ) {
-                    resTasks.push(el)
-                }
-            })
-            return resTasks.reverse()
-        },
-    },
-    watch: {
-        tasks: {
-            handler(newTasks) {
-                localStorage.setItem('tasks', JSON.stringify(newTasks))
-            },
-            deep: true,
-        },
-        groups: {
-            handler(newGroup) {
-                localStorage.setItem('groups', JSON.stringify(newGroup))
-            },
-            deep: true,
-        },
-        isChangeGroupState(newVal) {
-            if (newVal) {
-                this.addGroupInputPlaceholder = 'Change group...'
-            } else {
-                this.addGroupInputPlaceholder = 'Add group...'
-            }
-            this.isGroupInputActive = true
-        },
-        isTaskChanging(newVal) {
-            if (newVal) {
-                this.addTaskInputPlaceholder = 'Change task...'
-                this.$refs.addTaskInput.focus()
-            } else {
-                this.addTaskInputPlaceholder = 'Add task...'
-            }
-        },
-        groupLastId(newVal) {
-            localStorage.setItem('groupLastId', JSON.stringify(newVal))
-        },
-        taskLastId(newVal) {
-            localStorage.setItem('taskLastId', JSON.stringify(newVal))
-        },
-    },
-    mounted() {
-        this.activeGroupIndex = this.groups.length ? this.groups[0].id : 0
-    },
-    methods: {
-        setGroupActive(id) {
-            this.activeGroupIndex = id
-        },
-        changeTaskView(value) {
-            if (value == 'active') {
-                this.isActiveItemsViewing = true
-            } else if (value == 'completed') {
-                this.isActiveItemsViewing = false
-            }
-        },
-        // This method is also method that changing name of the group
-        addGroup(event) {
-            event.preventDefault()
-            if (!this.isChangeGroupState) {
-                if (this.addGroupInputValue != '') {
-                    this.groupLastId++
-                    this.groups.unshift({
-                        id: this.groupLastId,
-                        name: this.addGroupInputValue,
-                    })
-                    this.activeGroupIndex = this.groupLastId
-                }
-            } else {
-                var group = this.groups.find(
-                    (el) => el.id == this.activeGroupIndex
-                )
-                group.name = this.addGroupInputValue
-            }
-            this.addGroupInputValue = ''
-        },
-        addTask(event) {
-            event.preventDefault()
-            if (this.isTaskChanging) {
-                this.changeTask()
-            } else {
-                if (this.addTaskInputValue != '') {
-                    this.taskLastId++
-                    this.tasks.push({
-                        userId: this.activeGroupIndex,
-                        id: this.taskLastId,
-                        title: this.addTaskInputValue,
-                        completed: false,
-                    })
-                }
-                this.addTaskInputValue = ''
-            }
-        },
-        deleteTask(task) {
-            this.tasks.splice(this.tasks.indexOf(task), 1)
-        },
-        changeTask() {
-            if (this.addTaskInputValue != '') {
-                var task = this.tasks.find((el) => el.id == this.changingTaskId)
-                this.tasks[this.tasks.indexOf(task)].title =
-                    this.addTaskInputValue
-            }
-            this.isTaskChanging = false
-            this.changingTaskId = null
-            this.addTaskInputValue = ''
-        },
-        setCompleted(task) {
-            task.completed = true
-        },
-        toggleGroupInputActive() {
-            if (this.isGroupInputActive) {
-                this.isGroupInputActive = false
-            } else {
-                this.isGroupInputActive = true
-            }
-            this.addGroupInputValue = ''
-        },
-        deleteGroup() {
-            var groupToDelete = this.groups.find(
-                (el) => el.id == this.activeGroupIndex
-            )
-            this.groups.splice(this.groups.indexOf(groupToDelete), 1)
-            this.tasks = this.tasks.filter(
-                (task) => task.userId != this.activeGroupIndex
-            )
-            this.activeGroupIndex = this.groups[0].id
-        },
-        // Recursive solution to clear array from tasks which group is deleted
-        // There is another solution by using internal JS filter() function
-        // this.tasks = this.tasks.filter(task => task.userId != this.activeGroupIndex)
-        // clearTasksFromId(id) {
-        //   var cleared = true
-        //   this.tasks.forEach((el) => {
-        //     if ( el.userId == id ) {
-        //       cleared = false
-        //     }
-        //   })
-        //   if ( cleared ) {
-        //     return
-        //   } else {
-        //     this.tasks.forEach((el) => {
-        //       if ( el.userId == id ) {
-        //         this.tasks.splice(this.tasks.indexOf(el), 1)
-        //         this.clearTasksFromId(id)
-        //       }
-        //     })
-        //   }
-        // }
-    },
-}
+const todosStore = useTodosStore()
+
+const app = initializeApp(firebaseConfig)
+const auth = initializeAuth(app, {
+    persistence: [browserLocalPersistence, indexedDBLocalPersistence]
+})
+onAuthStateChanged(auth, (user) => {
+    console.log('onAuthStateChanged', user)
+    todosStore.user = user
+})
+
 </script>
 
 <template>
-    <div class="level-block">
-        <div class="container">
-            <div class="level-block__inner">
-                <div class="level-block__bar">
-                    <div
-                        id="progress-bar"
-                        class="level-block__bar_in"
-                        :style="{ 'max-width': fillLevel }"
-                    ></div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <AuthForm v-if="true" :auth="auth" />
+    <template v-else>
+        <ProgressBar />
 
-    <div class="active-completed">
-        <div class="container">
-            <div class="active-completed__inner">
-                <div
-                    class="btn-container"
-                    :class="{ active: isActiveItemsViewing }"
-                    @click="changeTaskView('active')"
-                >
-                    <h4 class="active__btn">Active</h4>
-                    <div class="btn__underline"></div>
-                </div>
-                <div
-                    class="btn-container"
-                    :class="{ active: !isActiveItemsViewing }"
-                    @click="changeTaskView('completed')"
-                >
-                    <h4 class="completed__btn">Completed</h4>
-                    <div class="btn__underline"></div>
-                </div>
-            </div>
-        </div>
-    </div>
+        <ViewModes />
 
-    <div class="group-list">
-        <div class="container">
-            <div class="group-list__inner">
-                <div class="group-list__form">
-                    <Icon
-                        id="plus-circle-icon"
-                        icon="akar-icons:circle-plus-fill"
-                        color="#888"
-                        height="24"
-                        @click="
-                            toggleGroupInputActive(),
-                                (isChangeGroupState = false)
-                        "
-                    />
-                    <form
-                        class="group-list__input-container"
-                        :class="{
-                            'group-list__input-active': isGroupInputActive,
-                        }"
-                        @submit="addGroup"
-                    >
-                        <input
-                            ref="groupInput"
-                            v-model="addGroupInputValue"
-                            :placeholder="addGroupInputPlaceholder"
-                            type="text"
-                            class="group-list__input"
-                        />
-                    </form>
-                </div>
-                <div
-                    id="group-container"
-                    ref="groupViewport"
-                    v-dragscroll.x="true"
-                >
-                    <div ref="groupContent" class="group-list__items">
-                        <transition-group name="group">
-                            <span
-                                v-for="group in groups"
-                                :key="group.id"
-                                class="group-list__item"
-                                :class="{
-                                    'group-list__item-active':
-                                        activeGroupIndex == group.id,
-                                }"
-                                @click="setGroupActive(group.id)"
-                                >{{ group.name }}</span
-                            >
-                        </transition-group>
-                    </div>
-                </div>
-                <div v-if="groups.length" class="edit-groups">
-                    <Icon
-                        icon="clarity:edit-solid"
-                        color="#ff6464"
-                        height="22"
-                        @click="
-                            ;(isChangeGroupState = true),
-                                toggleGroupInputActive()
-                        "
-                    />
-                    <div class="trash-icon" @click="deleteGroup">
-                        <svg
-                            width="22"
-                            height="22"
-                            viewBox="0 0 22 22"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="tasks__item_svg"
-                        >
-                            <path
-                                d="M3 5H19L17.42 19.22C17.3658 19.7094 17.1331 20.1616 16.7663 20.49C16.3994 20.8184 15.9244 21 15.432 21H6.568C6.07564 21 5.60056 20.8184 5.23375 20.49C4.86693 20.1616 4.63416 19.7094 4.58 19.22L3 5Z"
-                                stroke="#FF6464"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            />
-                            <path
-                                d="M6.345 2.147C6.50675 1.80397 6.76271 1.514 7.083 1.31091C7.4033 1.10782 7.77474 0.999996 8.154 1H13.846C14.2254 0.999806 14.5971 1.10755 14.9176 1.31064C15.2381 1.51374 15.4942 1.80381 15.656 2.147L17 5H5L6.345 2.147Z"
-                                stroke="#FF6464"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            />
-                            <path
-                                d="M1 5H21"
-                                stroke="#FF6464"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            />
-                            <path
-                                d="M9 10V15"
-                                stroke="#FF6464"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            />
-                            <path
-                                d="M13 10V15"
-                                stroke="#FF6464"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            />
-                        </svg>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+        <div class="group-list">
+            <div class="container">
+                <div class="group-list__inner">
 
-    <div v-if="groups.length" class="tasks">
-        <div class="container">
-            <div class="tasks__inner">
-                <form class="tasks__form" @submit="addTask">
-                    <input
-                        ref="addTaskInput"
-                        v-model="addTaskInputValue"
-                        :placeholder="addTaskInputPlaceholder"
-                        class="group-list__input tasks__input"
-                        type="text"
-                    />
-                    <div
-                        v-if="!isTaskChanging"
-                        class="tasks-plus-icon"
-                        @click="addTask"
-                    >
-                        <svg
-                            width="34"
-                            height="34"
-                            viewBox="0 0 34 34"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                        >
-                            <path
-                                fill-rule="evenodd"
-                                clip-rule="evenodd"
-                                d="M17 0.5C7.8875 0.5 0.5 7.8875 0.5 17C0.5 26.1125 7.8875 33.5 17 33.5C26.1125 33.5 33.5 26.1125 33.5 17C33.5 7.8875 26.1125 0.5 17 0.5ZM18.5 23C18.5 23.3978 18.342 23.7794 18.0607 24.0607C17.7794 24.342 17.3978 24.5 17 24.5C16.6022 24.5 16.2206 24.342 15.9393 24.0607C15.658 23.7794 15.5 23.3978 15.5 23V18.5H11C10.6022 18.5 10.2206 18.342 9.93934 18.0607C9.65804 17.7794 9.5 17.3978 9.5 17C9.5 16.6022 9.65804 16.2206 9.93934 15.9393C10.2206 15.658 10.6022 15.5 11 15.5H15.5V11C15.5 10.6022 15.658 10.2206 15.9393 9.93934C16.2206 9.65804 16.6022 9.5 17 9.5C17.3978 9.5 17.7794 9.65804 18.0607 9.93934C18.342 10.2206 18.5 10.6022 18.5 11V15.5H23C23.3978 15.5 23.7794 15.658 24.0607 15.9393C24.342 16.2206 24.5 16.6022 24.5 17C24.5 17.3978 24.342 17.7794 24.0607 18.0607C23.7794 18.342 23.3978 18.5 23 18.5H18.5V23Z"
-                                fill="#FF6464"
-                            />
-                        </svg>
+                    <!-- Input -->
+
+                    <Input />
+
+                    <!-- Groups List -->
+
+                    <GroupsList />
+
+                    <!-- Groups Edit, Delete buttons -->
+                    
+                    <div v-if="todosStore.groups.length" class="edit-groups">
+                        <EditGroup />
+                        <DeleteGroup />
                     </div>
-                    <Icon
-                        v-else
-                        class="tasks-plus-icon"
-                        icon="el:ok-sign"
-                        color="#ff6464"
-                        height="34"
-                        @click="changeTask"
-                    />
-                </form>
-                <div class="tasks__content">
-                    <transition-group name="list">
-                        <div
-                            v-for="task in getViewTasks"
-                            :key="task.id"
-                            class="tasks__item"
-                        >
-                            <span
-                                class="tasks__item_value"
-                                :class="{
-                                    'task-changing': changingTaskId == task.id,
-                                }"
-                                >{{ task.title }}</span
-                            >
-                            <div class="tasks__item_icons">
-                                <div
-                                    id="completed-icon"
-                                    @click="setCompleted(task)"
-                                >
-                                    <svg
-                                        width="24"
-                                        height="24"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="tasks__item_svg"
-                                    >
-                                        <path
-                                            d="M12 0C5.37258 0 0 5.37258 0 12C0 18.6274 5.37258 24 12 24C18.6274 24 24 18.6274 24 12C24 5.37258 18.6274 0 12 0ZM17.1489 5.6206L19.6421 8.11376L11.855 15.9024L9.37646 18.3794L6.8833 15.8862L4.3579 13.3594L6.83496 10.8823L9.36036 13.4092L17.1489 5.6206Z"
-                                            fill="#FF6464"
-                                        />
-                                    </svg>
-                                </div>
-                                <Icon
-                                    id="tasks-edit-icon"
-                                    icon="clarity:edit-solid"
-                                    color="#ff6464"
-                                    height="22"
-                                    @click="
-                                        ;(changingTaskId = task.id),
-                                            (isTaskChanging = true)
-                                    "
-                                />
-                                <div
-                                    class="trash-icon"
-                                    @click="deleteTask(task)"
-                                >
-                                    <svg
-                                        width="22"
-                                        height="22"
-                                        viewBox="0 0 22 22"
-                                        fill="none"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="tasks__item_svg"
-                                    >
-                                        <path
-                                            d="M3 5H19L17.42 19.22C17.3658 19.7094 17.1331 20.1616 16.7663 20.49C16.3994 20.8184 15.9244 21 15.432 21H6.568C6.07564 21 5.60056 20.8184 5.23375 20.49C4.86693 20.1616 4.63416 19.7094 4.58 19.22L3 5Z"
-                                            stroke="#FF6464"
-                                            stroke-width="2"
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                        />
-                                        <path
-                                            d="M6.345 2.147C6.50675 1.80397 6.76271 1.514 7.083 1.31091C7.4033 1.10782 7.77474 0.999996 8.154 1H13.846C14.2254 0.999806 14.5971 1.10755 14.9176 1.31064C15.2381 1.51374 15.4942 1.80381 15.656 2.147L17 5H5L6.345 2.147Z"
-                                            stroke="#FF6464"
-                                            stroke-width="2"
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                        />
-                                        <path
-                                            d="M1 5H21"
-                                            stroke="#FF6464"
-                                            stroke-width="2"
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                        />
-                                        <path
-                                            d="M9 10V15"
-                                            stroke="#FF6464"
-                                            stroke-width="2"
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                        />
-                                        <path
-                                            d="M13 10V15"
-                                            stroke="#FF6464"
-                                            stroke-width="2"
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                        />
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-                    </transition-group>
+                
                 </div>
             </div>
         </div>
-    </div>
-    <div v-else class="msg">
-        <div class="container">
-            <div class="msg__inner">
-                <h3>
-                    There is no groups!. Create some groups in order to create
-                    tasks
-                </h3>
+
+        <div v-if="todosStore.groups.length" class="tasks">
+            <div class="container">
+                <div class="tasks__inner">
+                    <TaskInput />
+                    <TodosList />
+                </div>
             </div>
         </div>
-    </div>
+        <div v-else class="msg">
+            <div class="container">
+                <div class="msg__inner">
+                    <h3>
+                        There is no groups!. Create some groups in order to create
+                        tasks
+                    </h3>
+                </div>
+            </div>
+        </div>
+    </template>
 </template>
 
 <style lang="scss">
@@ -512,11 +83,11 @@ export default {
 @use 'scss/base';
 
 // level-block
-@use 'scss/level-block';
+// @use 'scss/level-block';
 
 // active-completed
 
-@use 'scss/active-completed';
+// @use 'scss/active-completed';
 
 // group-list
 
@@ -606,42 +177,19 @@ export default {
     margin-top: 50px;
 }
 
-.tasks__form {
-    position: relative;
-}
 
-.tasks__input {
-    padding: 20px 40px;
-    width: 100%;
-}
 
-.tasks__input[type='text'] {
-    font-size: 24px;
-}
 
-.tasks__input::placeholder {
-    font-size: 24px;
-}
 
-.tasks-plus-icon {
-    position: absolute;
-    right: 30px;
-    top: 21px;
-}
 
-.tasks-plus-icon:hover {
-    cursor: pointer;
-}
 
-.tasks__content {
-    margin-top: 50px;
-    position: relative;
-}
 
-.tasks__item_icons {
-    display: flex;
-    align-items: center;
-}
+// .tasks__content {
+//     margin-top: 50px;
+//     position: relative;
+// }
+
+
 
 .tasks__item {
     padding: 20px 40px;
