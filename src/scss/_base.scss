@@ -1,4 +1,11 @@
-$active_gradient: linear-gradient(90deg, #ff6464 0%, #ff9e9e 100%);
+:root {
+    --primary-gradient: linear-gradient(90deg, #ff6464 0%, #ff9e9e 100%);
+    --primary-color: rgba(255, 255, 255, 1);
+    --secondary-background: rgba(255, 255, 255, 1);
+    --secondary-color: rgba(97, 97, 97, 1);
+    --tab-border-radius: 83px;
+    --tab-padding: 10px 20px;
+}
 
 *,
 *::before,
@@ -14,11 +21,16 @@ $active_gradient: linear-gradient(90deg, #ff6464 0%, #ff9e9e 100%);
     font-display: swap;
 }
 
+button {
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+}
+
 body {
     background-color: #fafafa;
     font-family: 'Poppins', sans-serif;
     color: rgba(128, 128, 128, 1);
-    padding-bottom: 50px;
 }
 
 a {

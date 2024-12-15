@@ -1,9 +1,15 @@
 <script setup>
+import { collection, addDoc, updateDoc, doc } from 'firebase/firestore'
 import { Icon } from '@iconify/vue'
-import { ref, computed } from 'vue';
-import { useTodosStore } from '../../../stores/todos';
+import { ref, computed } from 'vue'
+import { useTodosStore } from '~/stores/todos'
+import inputClasses from '@/css/input.module.css'
+import { useDatabaseStore } from '~/stores/database'
+import { useGroupsStore } from '~/stores/groups'
 
 const todosStore = useTodosStore()
+const databaseStore = useDatabaseStore()
+const groupsStore = useGroupsStore()
 
 const taskInputValue = ref('')
 
@@ -21,22 +27,30 @@ function submitTaskAction(event) {
         changeTask()
     } else {
         if (taskInputValue.value !== '') {
-            todosStore.taskLastId++
-            todosStore.tasks.push({
-                userId: todosStore.activeGroupIndex,
-                id: todosStore.taskLastId,
-                title: taskInputValue.value,
-                completed: false,
-            })
+            try {
+                addDoc(collection(databaseStore.db, 'todos'), {
+                    authorId: databaseStore.user.uid,
+                    groupId: groupsStore.activeGroupIndex,
+                    completed: false,
+                    title: taskInputValue.value,
+                })
+            } catch (e) {
+                console.log(e)
+            }
         }
     }
     taskInputValue.value = ''
 }
 function changeTask() {
     if (taskInputValue.value !== '') {
-        let task = todosStore.tasks.find((el) => el.id == todosStore.changingTaskId)
-        todosStore.tasks[todosStore.tasks.indexOf(task)].title =
-            taskInputValue.value
+        const taskRef = doc(
+            databaseStore.db,
+            'todos',
+            todosStore.changingTaskId
+        )
+        updateDoc(taskRef, {
+            title: taskInputValue.value,
+        })
     }
     todosStore.isChangeTaskState = false
     taskInputValue.value = ''
@@ -50,7 +64,8 @@ function changeTask() {
             ref="addTaskInput"
             v-model="taskInputValue"
             :placeholder="taskInputPlaceholder"
-            class="group-list__input tasks__input"
+            :class="inputClasses['group-list__input']"
+            class="tasks__input"
             type="text"
         />
         <div
@@ -83,7 +98,6 @@ function changeTask() {
         />
     </form>
 </template>
-
 
 <style scoped lang="scss">
 .tasks__form {

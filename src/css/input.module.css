@@ -1,0 +1,35 @@
+.group-list__input {
+    padding: 10px 0;
+    padding-left: 20px;
+    padding-right: 10px;
+    border: none;
+    background-color: #f4f4f4;
+    border-radius: 83px;
+    padding-left: 50px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 18px;
+    color: #bebebe;
+}
+.group-list__input:focus {
+    outline: none;
+}
+.group-list__input::placeholder {
+    font-family: 'Poppins', sans-serif;
+    font-size: 18px;
+    color: #bebebe;
+}
+
+@media screen and (max-width: 735px) {
+    .group-list__input {
+        padding-top: 8px;
+        padding-bottom: 8px;
+        min-width: 210px;
+        width: 100%;
+    }
+    .group-list__input::placeholder {
+        font-size: 16px;
+    }
+    .group-list__input {
+        font-size: 16px;
+    }
+}

@@ -1,0 +1,17 @@
+.tab-common {
+    padding: 10px 20px;
+    border-radius: 83px;
+    font-size: 18px;
+}
+
+.primary-tab {
+    composes: tab-common;
+    color: var(--primary-color);
+    background: var(--primary-gradient);
+}
+
+.secondary-tab {
+    composes: tab-common;
+    color: var(--secondary-color);
+    background: var(--secondary-background);
+}

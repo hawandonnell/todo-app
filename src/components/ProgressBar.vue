@@ -1,15 +1,19 @@
 <script setup>
 import { computed } from 'vue'
-import { useTodosStore } from '../../stores/todos.js'
+import { useTodosStore } from '~/stores/todos.js'
 
 const todosStore = useTodosStore()
 
 const fillLevel = computed(() => {
-    const completedTasksCount = todosStore.currentGroupTasks.filter(task => task.completed === true).length
+    const completedTasksCount = todosStore.currentGroupTasks.filter(
+        (task) => task.completed === true
+    ).length
     if (completedTasksCount === 0) {
         return '0%'
     }
-    return `${100 / (todosStore.currentGroupTasks.length / completedTasksCount)}%`
+    return `${
+        100 / (todosStore.currentGroupTasks.length / completedTasksCount)
+    }%`
 })
 </script>
 

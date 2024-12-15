@@ -1,8 +1,7 @@
 <script setup>
-import { useTodosStore } from '../../stores/todos'
+import { useTodosStore } from '~/stores/todos'
 
 const todosStore = useTodosStore()
-
 </script>
 
 <template>
